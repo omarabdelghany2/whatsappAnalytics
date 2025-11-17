@@ -3,8 +3,8 @@
 // Old hardcoded approach (replaced for Railway deployment):
 // const API_BASE_URL = 'http://localhost:3000';
 // const WS_URL = 'ws://localhost:3000';
-const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3000');
-const WS_URL = import.meta.env.VITE_WS_URL || (import.meta.env.MODE === 'production' ? `wss://${window.location.host}` : 'ws://localhost:3000');
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
+const WS_URL = import.meta.env.VITE_WS_URL || (import.meta.env.PROD ? `wss://${window.location.host}` : 'ws://localhost:3000');
 
 export const api = {
   async getHealth() {
