@@ -821,23 +821,53 @@ function broadcast(data) {
 // WHATSAPP CLIENT INITIALIZATION
 // ============================================
 
+// Find Chromium executable on Railway/Nixpacks
+function findChromiumExecutable() {
+    const { execSync } = require('child_process');
+
+    // Try to find chromium in nix store
+    try {
+        const chromiumPath = execSync('which chromium || find /nix/store -name chromium -type f 2>/dev/null | head -1', {
+            encoding: 'utf8'
+        }).trim();
+
+        if (chromiumPath && fs.existsSync(chromiumPath)) {
+            console.log('✅ Found Chromium at:', chromiumPath);
+            return chromiumPath;
+        }
+    } catch (e) {
+        console.log('⚠️  Could not find chromium via which/find');
+    }
+
+    // Return null to use default Puppeteer behavior
+    return null;
+}
+
 async function initClient() {
+    const chromiumPath = findChromiumExecutable();
+    const puppeteerConfig = {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+        ]
+    };
+
+    // Add executablePath if we found Chromium
+    if (chromiumPath) {
+        puppeteerConfig.executablePath = chromiumPath;
+    }
+
     client = new Client({
         authStrategy: new LocalAuth({
             dataPath: '.wwebjs_auth'
         }),
-        puppeteer: {
-            headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--no-first-run',
-                '--no-zygote',
-                '--disable-gpu'
-            ]
-        }
+        puppeteer: puppeteerConfig
     });
 
     client.on('qr', (qr) => {
