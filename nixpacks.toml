@@ -1,8 +1,5 @@
-[providers]
-nodejs = "18"
-
 [phases.setup]
-nixPkgs = ["nodejs_18", "chromium"]
+nixPkgs = ["nodejs", "chromium"]
 
 [phases.install]
 cmds = ["npm ci --prefer-offline --no-audit"]
