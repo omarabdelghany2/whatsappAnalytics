@@ -1,0 +1,7 @@
+# Prevent old build artifacts from being copied to Docker
+frontend/dist
+frontend/node_modules/.vite
+frontend/node_modules
+
+# Node modules
+node_modules
