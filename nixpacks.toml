@@ -5,7 +5,7 @@ nixPkgs = ["nodejs", "chromium"]
 cmds = ["npm ci --prefer-offline --no-audit"]
 
 [phases.build]
-cmds = ["npm run railway:build"]
+cmds = ["rm -rf frontend/dist frontend/node_modules/.vite", "npm run railway:build"]
 
 [start]
 cmd = "node server.js"
