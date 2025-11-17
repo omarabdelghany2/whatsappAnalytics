@@ -39,13 +39,17 @@ const wss = new WebSocket.Server({
 
 // Handle WebSocket upgrade explicitly for Railway
 server.on('upgrade', (request, socket, head) => {
+    console.log(`📡 WebSocket upgrade request received: ${request.url}`);
     const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
+    console.log(`   Path: ${pathname}`);
 
     if (pathname === '/ws') {
+        console.log('✅ Upgrading to WebSocket on /ws path');
         wss.handleUpgrade(request, socket, head, (ws) => {
             wss.emit('connection', ws, request);
         });
     } else {
+        console.log(`❌ Rejected upgrade for path: ${pathname}`);
         socket.destroy();
     }
 });
