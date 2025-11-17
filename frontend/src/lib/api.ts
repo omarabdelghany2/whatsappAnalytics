@@ -1,14 +1,7 @@
-// Use relative URLs in production (Railway serves both frontend and backend)
-// In development, use localhost
-// Old hardcoded approach (replaced for Railway deployment):
-// const API_BASE_URL = 'http://localhost:3000';
-// const WS_URL = 'ws://localhost:3000';
-
-// Check if we're in development by looking at the hostname
-const isDevelopment = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || (isDevelopment ? 'http://localhost:3000' : '');
-const WS_URL = import.meta.env.VITE_WS_URL || (isDevelopment ? 'ws://localhost:3000' : `wss://${typeof window !== 'undefined' ? window.location.host : ''}`);
+// TEMPORARY FIX: Hardcoded Railway URL to bypass cache issues
+// TODO: Revert to dynamic detection after Railway cache is cleared
+const API_BASE_URL = '';  // Use relative URLs for Railway
+const WS_URL = 'wss://whatsappanalytics-productionn.up.railway.app';
 
 export const api = {
   async getHealth() {
