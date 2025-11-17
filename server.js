@@ -33,7 +33,10 @@ const GROUP_NAMES = config.groups || ["Army"];
 // Express app
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({
+    server,
+    path: '/ws'  // Use dedicated path for WebSocket on Railway
+});
 
 app.use(cors());
 app.use(express.json());

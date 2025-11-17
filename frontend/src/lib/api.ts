@@ -1,7 +1,7 @@
 // TEMPORARY FIX: Hardcoded Railway URL to bypass cache issues
 // TODO: Revert to dynamic detection after Railway cache is cleared
 const API_BASE_URL = '';  // Use relative URLs for Railway
-const WS_URL = 'wss://whatsappanalytics-productionn.up.railway.app';
+const WS_URL = 'wss://whatsappanalytics-productionn.up.railway.app/ws';
 
 export const api = {
   async getHealth() {
