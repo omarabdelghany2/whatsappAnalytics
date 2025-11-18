@@ -310,10 +310,24 @@ app.post('/api/auth/logout', async (req, res) => {
             client = null;
         }
 
+        // Wait a moment for Chromium to fully release file locks
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // Delete session folder for faster next login
         const sessionPath = path.join(DATA_DIR, '.wwebjs_auth');
         if (fs.existsSync(sessionPath)) {
             try {
+                // Force remove the SingletonLock file first if it exists
+                const lockFile = path.join(sessionPath, 'session', 'SingletonLock');
+                if (fs.existsSync(lockFile)) {
+                    try {
+                        fs.unlinkSync(lockFile);
+                        console.log('✓ Removed Chromium lock file');
+                    } catch (e) {
+                        console.log('⚠️  Could not remove lock file, continuing...');
+                    }
+                }
+
                 fs.rmSync(sessionPath, { recursive: true, force: true });
                 console.log('✓ Session files deleted');
             } catch (sessionError) {
@@ -899,6 +913,17 @@ async function initClient() {
     // Use persistent storage path for WhatsApp session
     const authPath = path.join(DATA_DIR, '.wwebjs_auth');
     console.log(`🔐 WhatsApp session path: ${authPath}`);
+
+    // Clean up any leftover Chromium lock files from previous crashes
+    const lockFile = path.join(authPath, 'session', 'SingletonLock');
+    if (fs.existsSync(lockFile)) {
+        try {
+            fs.unlinkSync(lockFile);
+            console.log('🧹 Cleaned up stale Chromium lock file');
+        } catch (e) {
+            console.log('⚠️  Could not remove stale lock file:', e.message);
+        }
+    }
 
     client = new Client({
         authStrategy: new LocalAuth({
