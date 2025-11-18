@@ -66,8 +66,22 @@ if (process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT) {
     }
 }
 
+// Determine data directory (use Railway volume in production, local in development)
+const DATA_DIR = process.env.RAILWAY_ENVIRONMENT
+    ? '/app/data'  // Railway volume mount path
+    : __dirname;   // Local development
+
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    console.log(`📁 Created data directory: ${DATA_DIR}`);
+}
+
 // Initialize SQLite database
-const db = new sqlite3.Database(path.join(__dirname, 'whatsapp_analytics.db'), (err) => {
+const dbPath = path.join(DATA_DIR, 'whatsapp_analytics.db');
+console.log(`📊 Database path: ${dbPath}`);
+
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Error opening database:', err);
     } else {
@@ -297,7 +311,7 @@ app.post('/api/auth/logout', async (req, res) => {
         }
 
         // Delete session folder for faster next login
-        const sessionPath = path.join(__dirname, '.wwebjs_auth');
+        const sessionPath = path.join(DATA_DIR, '.wwebjs_auth');
         if (fs.existsSync(sessionPath)) {
             try {
                 fs.rmSync(sessionPath, { recursive: true, force: true });
@@ -882,9 +896,13 @@ async function initClient() {
         puppeteerConfig.executablePath = chromiumPath;
     }
 
+    // Use persistent storage path for WhatsApp session
+    const authPath = path.join(DATA_DIR, '.wwebjs_auth');
+    console.log(`🔐 WhatsApp session path: ${authPath}`);
+
     client = new Client({
         authStrategy: new LocalAuth({
-            dataPath: '.wwebjs_auth'
+            dataPath: authPath
         }),
         puppeteer: puppeteerConfig
     });
