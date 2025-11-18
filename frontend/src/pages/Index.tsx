@@ -33,11 +33,23 @@ const Index = () => {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Fetch all messages
-  const { data: messagesData, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
-    queryKey: ['messages'],
+  // Fetch recent messages from all groups (for group list preview)
+  const { data: allMessagesData, refetch: refetchAllMessages } = useQuery({
+    queryKey: ['all-messages'],
     queryFn: () => api.getMessages(100, 0),
     enabled: !!groupsData?.groups?.length,
+  });
+
+  // Fetch all messages for the selected group (with higher limit to get all messages)
+  const { data: selectedGroupMessagesData, isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
+    queryKey: ['group-messages', selectedGroupId],
+    queryFn: () => {
+      if (selectedGroupId) {
+        return api.getMessagesByGroup(selectedGroupId, 1000, 0);
+      }
+      return Promise.resolve({ success: true, messages: [], total: 0 });
+    },
+    enabled: !!selectedGroupId,
   });
 
   // Fetch all events (filtered by selected date, or all if selectedDate is null)
@@ -64,10 +76,13 @@ const Index = () => {
 
   // Set messages when data changes
   useEffect(() => {
-    if (messagesData?.messages) {
-      setMessages(messagesData.messages);
+    // Use group-specific messages if available, otherwise use all messages
+    if (selectedGroupMessagesData?.messages) {
+      setMessages(selectedGroupMessagesData.messages);
+    } else if (allMessagesData?.messages) {
+      setMessages(allMessagesData.messages);
     }
-  }, [messagesData]);
+  }, [selectedGroupMessagesData, allMessagesData]);
 
   // Set events when data changes
   useEffect(() => {
@@ -145,14 +160,14 @@ const Index = () => {
       wsClient.off('event', handleEvent);
       wsClient.off('group_added', handleGroupAdded);
     };
-  }, [toast, refetchMessages, queryClient]);
+  }, [toast, refetchMessages, refetchAllMessages, queryClient]);
 
   // Handle component cleanup
   useEffect(() => {
     return () => {
       wsClient.disconnect();
     };
-  }, [toast, refetchMessages, queryClient]);
+  }, []);
 
   const handleTranslate = () => {
     setTranslateMode(!translateMode);
@@ -169,6 +184,7 @@ const Index = () => {
 
       // Refetch groups and messages to update the list
       queryClient.invalidateQueries({ queryKey: ['groups'] });
+      refetchAllMessages();
       refetchMessages();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add group';
@@ -236,7 +252,9 @@ const Index = () => {
 
   // Transform backend data to frontend format
   const transformedGroups = groupsData?.groups?.map((group) => {
-    const groupMessages = messages.filter((msg) => msg.groupId === group.id);
+    // Use allMessagesData for group list previews
+    const allMessages = allMessagesData?.messages || [];
+    const groupMessages = allMessages.filter((msg) => msg.groupId === group.id);
     const lastMessage = groupMessages.length > 0 ? groupMessages[0] : null;
 
     const unreadCount = groupMessages.filter((msg) => {
@@ -259,10 +277,8 @@ const Index = () => {
     };
   }) || [];
 
-  // Get messages for selected group
-  const selectedGroupMessages = selectedGroupId
-    ? messages.filter((msg) => msg.groupId === selectedGroupId)
-    : messages;
+  // Messages are already filtered by the query, so just use them directly
+  const selectedGroupMessages = messages;
 
   // Sort messages oldest first (ascending by timestamp)
   const sortedMessages = [...selectedGroupMessages].sort((a, b) =>

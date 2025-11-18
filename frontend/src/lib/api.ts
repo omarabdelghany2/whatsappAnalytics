@@ -3,6 +3,26 @@
 const API_BASE_URL = '';  // Use relative URLs for Railway
 const WS_URL = 'wss://whatsappanalytics-productionn.up.railway.app/ws';
 
+export interface Message {
+  id: string;
+  groupId: string;
+  groupName: string;
+  sender: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface Event {
+  id: string;
+  groupId: string;
+  groupName: string;
+  type: 'JOIN' | 'LEAVE' | 'CERTIFICATE';
+  memberId: string;
+  memberName: string;
+  timestamp: string;
+  certificateName?: string;
+}
+
 export const api = {
   async getHealth() {
     const response = await fetch(`${API_BASE_URL}/api/health`);
