@@ -1516,35 +1516,27 @@ async function processMessage(msg, groupName, groupId) {
             };
         }
 
-        // Handle regular messages - Use cached members to resolve author
+        // Handle regular messages - Use msg.getContact() to get sender info
         let senderName = 'Unknown';
         let senderId = msg.author || '';
         let senderPhone = '';
 
         if (msg.author) {
-            console.log(`🔍 Looking up author: ${msg.author}`);
+            try {
+                console.log(`🔍 Getting contact for message author: ${msg.author}`);
 
-            // First try: Look up in cached members
-            if (cachedMembers && cachedMembers.has(msg.author)) {
-                const memberInfo = cachedMembers.get(msg.author);
-                senderPhone = memberInfo.phone;
-                senderName = memberInfo.name;
-                console.log(`✅ Found in cache: ${senderName} (${senderPhone})`);
-            } else {
-                console.log(`⚠️ Author ${msg.author} NOT in cache`);
-                console.log(`   Cache has ${cachedMembers ? cachedMembers.size : 0} members`);
+                // Use msg.getContact() method - works for BOTH @lid and @c.us!
+                const contact = await msg.getContact();
 
-                if (cachedMembers && cachedMembers.size > 0) {
-                    // Show ALL cached IDs to compare
-                    const allIds = Array.from(cachedMembers.keys());
-                    console.log(`   ALL cached IDs:`);
-                    allIds.forEach(id => {
-                        const member = cachedMembers.get(id);
-                        console.log(`     ${id} -> ${member.name} (${member.phone})`);
-                    });
-                }
+                // Extract phone and name from contact
+                senderPhone = contact.number || msg.author.split('@')[0];
+                senderName = contact.pushname || contact.name || senderPhone;
 
-                // Fallback: use the author ID directly
+                console.log(`✅ Resolved via msg.getContact(): ${senderName} (${senderPhone})`);
+            } catch (error) {
+                console.log(`❌ msg.getContact() failed:`, error.message);
+
+                // Fallback: use the author ID
                 senderPhone = msg.author.split('@')[0];
                 senderName = senderPhone;
             }
