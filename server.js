@@ -1456,53 +1456,44 @@ async function processMessage(msg, groupName, groupId) {
             };
         }
 
-        // Handle regular messages - Use msg.getChat() to access fresh participant data
+        // Handle regular messages - Create ContactId and use it to get contact details
         let senderName = 'Unknown';
         let senderId = msg.author || '';
         let senderPhone = '';
 
         if (msg.author) {
             try {
-                console.log(`🔍 Getting chat from message for author: ${msg.author}`);
+                console.log(`🔍 Resolving contact for: ${msg.author}`);
 
-                // Get chat directly from the message (might have different participant data)
-                const msgChat = await msg.getChat();
+                // Parse the ContactId from msg.author (_serialized format)
+                // Example: "183373762945250@lid" -> user: "183373762945250", server: "lid"
+                const parts = msg.author.split('@');
+                const userId = parts[0];
+                const serverType = parts[1] || 'c.us';
 
-                if (msgChat.isGroup && msgChat.participants) {
-                    console.log(`   Message chat has ${msgChat.participants.length} participants`);
+                console.log(`   ContactId parts - user: ${userId}, server: ${serverType}`);
 
-                    // Look for participant matching msg.author
-                    const participant = msgChat.participants.find(p =>
-                        p.id._serialized === msg.author
-                    );
+                // Create a ContactId object to use with getContactById
+                const contactId = {
+                    user: userId,
+                    server: serverType,
+                    _serialized: msg.author
+                };
 
-                    if (participant) {
-                        console.log(`✅ Found participant: ${participant.id._serialized} (user: ${participant.id.user})`);
+                console.log(`   Attempting getContactById with ContactId:`, contactId);
 
-                        // Get contact details
-                        try {
-                            const contact = await client.getContactById(participant.id._serialized);
-                            senderPhone = contact.number || participant.id.user;
-                            senderName = contact.pushname || contact.name || senderPhone;
-                            console.log(`✅ Contact resolved: ${senderName} (${senderPhone})`);
-                        } catch (contactErr) {
-                            // Use participant.id.user as phone
-                            senderPhone = participant.id.user;
-                            senderName = senderPhone;
-                            console.log(`✅ Using id.user: ${senderPhone}`);
-                        }
-                    } else {
-                        console.log(`⚠️ Author ${msg.author} not found in msg.getChat() participants`);
-                        senderPhone = msg.author.split('@')[0];
-                        senderName = senderPhone;
-                    }
-                } else {
-                    console.log(`⚠️ msgChat is not a group or has no participants`);
-                    senderPhone = msg.author.split('@')[0];
-                    senderName = senderPhone;
-                }
+                // Try to get contact using the ContactId
+                const contact = await client.getContactById(contactId);
+
+                // Extract phone and name from contact
+                senderPhone = contact.number || userId;
+                senderName = contact.pushname || contact.name || senderPhone;
+
+                console.log(`✅ Resolved: ${senderName} (${senderPhone})`);
             } catch (error) {
-                console.log(`❌ Error with msg.getChat():`, error.message);
+                console.log(`❌ getContactById with ContactId failed:`, error.message);
+
+                // Last resort: just use the ID
                 senderPhone = msg.author.split('@')[0];
                 senderName = senderPhone;
             }
