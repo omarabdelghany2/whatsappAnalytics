@@ -1451,33 +1451,47 @@ async function processMessage(msg, groupName, groupId) {
             };
         }
 
-        // Handle regular messages - Use ContactId _serialized to get contact
+        // Handle regular messages - Match participant by ContactId._serialized
         let senderName = 'Unknown';
         let senderId = msg.author || '';
         let senderPhone = '';
 
-        if (msg.author) {
+        if (msg.author && groupChat && groupChat.participants) {
             try {
-                // Use msg.author (which is the ContactId._serialized) directly to get contact
-                console.log(`🔍 Attempting to get contact for: ${msg.author}`);
-                const contact = await client.getContactById(msg.author);
+                // Find the participant whose id._serialized matches msg.author
+                const participant = groupChat.participants.find(p =>
+                    p.id._serialized === msg.author
+                );
 
-                // Extract phone number and name from contact
-                senderPhone = contact.number || contact.id?.user || msg.author.split('@')[0];
-                senderName = contact.pushname || contact.name || senderPhone;
+                if (participant) {
+                    // Get phone number directly from participant.id.user
+                    senderPhone = participant.id.user;
 
-                console.log(`✅ Resolved contact: ${senderName} (${senderPhone})`);
+                    // Try to get the name using getContactById with participant.id._serialized
+                    try {
+                        const contact = await client.getContactById(participant.id._serialized);
+                        senderName = contact.pushname || contact.name || senderPhone;
+                        console.log(`✅ Resolved: ${senderName} (${senderPhone})`);
+                    } catch (contactErr) {
+                        // If getContactById fails, just use phone number as name
+                        senderName = senderPhone;
+                        console.log(`✅ Using phone as name: ${senderPhone}`);
+                    }
+                } else {
+                    console.log(`⚠️ No participant found for author: ${msg.author}`);
+                    senderPhone = msg.author.split('@')[0];
+                    senderName = senderPhone;
+                }
             } catch (error) {
-                console.log(`❌ getContactById failed for ${msg.author}:`, error.message);
-
-                // Fallback: use the ID as-is
+                console.log(`❌ Error resolving sender:`, error.message);
                 senderPhone = msg.author.split('@')[0];
                 senderName = senderPhone;
             }
         } else {
-            // No author available
-            senderPhone = 'Unknown';
-            senderName = 'Unknown';
+            // No group chat or participants available
+            console.log(`⚠️ No group chat or participants for message`);
+            senderPhone = msg.author ? msg.author.split('@')[0] : 'Unknown';
+            senderName = senderPhone;
         }
 
         // Detect voice recordings (audio/ptt) and save as CERTIFICATE event
