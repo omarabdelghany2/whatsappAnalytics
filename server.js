@@ -1331,6 +1331,26 @@ async function processMessage(msg, groupName, groupId) {
         let groupChat = null;
         try {
             groupChat = await client.getChatById(groupId);
+
+            // Log all participants to understand the mapping
+            if (groupChat && groupChat.participants && groupChat.participants.length > 0) {
+                console.log(`\n📋 Group participants (${groupChat.participants.length}):`);
+                for (const p of groupChat.participants.slice(0, 5)) {  // Show first 5
+                    console.log(`  - ID: ${p.id._serialized}`);
+                    console.log(`    user: ${p.id.user}`);
+                    console.log(`    server: ${p.id.server}`);
+
+                    // Try to get contact to see all available data
+                    try {
+                        const c = await client.getContactById(p.id._serialized);
+                        console.log(`    name: ${c.pushname || c.name}`);
+                        console.log(`    number: ${c.number}`);
+                    } catch (e) {
+                        console.log(`    (contact lookup failed)`);
+                    }
+                }
+                console.log(`\n`);
+            }
         } catch (e) {
             console.error('Error getting group chat:', e.message);
         }
@@ -1430,6 +1450,39 @@ async function processMessage(msg, groupName, groupId) {
                 groupName: groupName
             };
         }
+
+        // Log ALL message properties to discover what's available
+        console.log('\n🔍 MESSAGE PROPERTIES:');
+        console.log('  type:', msg.type);
+        console.log('  author:', msg.author);
+        console.log('  from:', msg.from);
+        console.log('  fromMe:', msg.fromMe);
+        console.log('  hasMedia:', msg.hasMedia);
+        console.log('  body:', msg.body?.substring(0, 50));
+
+        // Check if msg has a Contact object
+        if (msg.getContact) {
+            try {
+                const msgContact = await msg.getContact();
+                console.log('  msg.getContact():');
+                console.log('    id:', msgContact.id?._serialized);
+                console.log('    number:', msgContact.number);
+                console.log('    pushname:', msgContact.pushname);
+                console.log('    name:', msgContact.name);
+            } catch (e) {
+                console.log('  msg.getContact() failed:', e.message);
+            }
+        }
+
+        // Check _data object (internal)
+        if (msg._data) {
+            console.log('  _data.from:', msg._data.from);
+            console.log('  _data.author:', msg._data.author);
+            console.log('  _data.sender:', msg._data.sender);
+            console.log('  _data.participant:', msg._data.participant);
+            console.log('  _data.notifyName:', msg._data.notifyName);
+        }
+        console.log('\n');
 
         // Handle regular messages - Use same approach as Total Members endpoint
         let senderName = 'Unknown';
