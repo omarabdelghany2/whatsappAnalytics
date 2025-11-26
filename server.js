@@ -1332,24 +1332,29 @@ async function processMessage(msg, groupName, groupId) {
         try {
             groupChat = await client.getChatById(groupId);
 
-            // Log all participants to understand the mapping
+            // Log BOTH @c.us and @lid participants
             if (groupChat && groupChat.participants && groupChat.participants.length > 0) {
-                console.log(`\n📋 Group participants (${groupChat.participants.length}):`);
-                for (const p of groupChat.participants.slice(0, 5)) {  // Show first 5
-                    console.log(`  - ID: ${p.id._serialized}`);
-                    console.log(`    user: ${p.id.user}`);
-                    console.log(`    server: ${p.id.server}`);
+                console.log(`\n📋 Group has ${groupChat.participants.length} participants`);
 
-                    // Try to get contact to see all available data
-                    try {
-                        const c = await client.getContactById(p.id._serialized);
-                        console.log(`    name: ${c.pushname || c.name}`);
-                        console.log(`    number: ${c.number}`);
-                    } catch (e) {
-                        console.log(`    (contact lookup failed)`);
-                    }
+                // Count how many are @c.us vs @lid
+                const cUsCount = groupChat.participants.filter(p => p.id._serialized.includes('@c.us')).length;
+                const lidCount = groupChat.participants.filter(p => p.id._serialized.includes('@lid')).length;
+                console.log(`  @c.us: ${cUsCount}, @lid: ${lidCount}`);
+
+                // Show first 3 @c.us and first 3 @lid
+                const cUsParticipants = groupChat.participants.filter(p => p.id._serialized.includes('@c.us')).slice(0, 3);
+                const lidParticipants = groupChat.participants.filter(p => p.id._serialized.includes('@lid')).slice(0, 3);
+
+                console.log('\n  Sample @c.us participants:');
+                for (const p of cUsParticipants) {
+                    console.log(`    - ${p.id._serialized} (user: ${p.id.user})`);
                 }
-                console.log(`\n`);
+
+                console.log('\n  Sample @lid participants:');
+                for (const p of lidParticipants) {
+                    console.log(`    - ${p.id._serialized} (user: ${p.id.user})`);
+                }
+                console.log('\n');
             }
         } catch (e) {
             console.error('Error getting group chat:', e.message);
