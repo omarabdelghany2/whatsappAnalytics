@@ -1516,61 +1516,37 @@ async function processMessage(msg, groupName, groupId) {
             };
         }
 
-        // Handle regular messages - Try multiple approaches to resolve author
+        // Handle regular messages - Use the original simple approach that was working
         let senderName = 'Unknown';
         let senderId = msg.author || '';
         let senderPhone = '';
 
         if (msg.author) {
-            console.log(`🔍 Resolving author: ${msg.author}`);
-
-            // Approach 1: Try msg.getContact() (may work for some IDs)
             try {
-                const contact = await msg.getContact();
+                // Simple approach from working commit: just get contact by author ID
+                const contact = await client.getContactById(msg.author);
+
+                // Get phone number and name
                 senderPhone = contact.number || msg.author.split('@')[0];
-                senderName = contact.pushname || contact.name || senderPhone;
-                console.log(`✅ Resolved via msg.getContact(): ${senderName} (${senderPhone})`);
-            } catch (getContactError) {
-                console.log(`⚠️ msg.getContact() failed: ${getContactError.message}`);
+                const contactName = contact.pushname || contact.name || '';
 
-                // Approach 2: Look in cache by exact ID match
-                if (cachedMembers && cachedMembers.has(msg.author)) {
-                    const memberInfo = cachedMembers.get(msg.author);
-                    senderPhone = memberInfo.phone;
-                    senderName = memberInfo.name;
-                    console.log(`✅ Found in cache by exact ID: ${senderName} (${senderPhone})`);
+                // Format as "Name (Phone)" or just phone if no name
+                if (contactName && senderPhone && contactName !== senderPhone) {
+                    senderName = `${contactName} (${senderPhone})`;
+                } else if (senderPhone) {
+                    senderName = senderPhone;
                 } else {
-                    // Approach 3: Check if we can find by extracting the base number
-                    // Sometimes @lid and @c.us might share some part of the ID
-                    const authorBase = msg.author.split('@')[0].split(':')[0]; // Remove @lid and any :XX suffix
-
-                    console.log(`⚠️ Not in cache. Trying to match base: ${authorBase}`);
-
-                    // Search cache for any ID that might match
-                    let found = false;
-                    if (cachedMembers) {
-                        for (const [cachedId, memberInfo] of cachedMembers) {
-                            // Check if phone number matches the author base
-                            if (memberInfo.phone === authorBase) {
-                                senderPhone = memberInfo.phone;
-                                senderName = memberInfo.name;
-                                console.log(`✅ Matched by phone number: ${senderName} (${senderPhone})`);
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!found) {
-                        // Last resort: use author ID as-is
-                        senderPhone = authorBase;
-                        senderName = authorBase;
-                        console.log(`⚠️ Using author ID as fallback: ${authorBase}`);
-                    }
+                    senderName = contactName || msg.author.split('@')[0];
                 }
+
+                console.log(`✅ Resolved: ${senderName}`);
+            } catch (e) {
+                // Fallback: use author ID
+                senderPhone = msg.author.split('@')[0];
+                senderName = senderPhone;
+                console.log(`⚠️ getContactById failed, using ID: ${senderName}`);
             }
         } else {
-            console.log(`⚠️ No author for message`);
             senderPhone = 'Unknown';
             senderName = 'Unknown';
         }
