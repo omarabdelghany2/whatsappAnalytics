@@ -407,8 +407,8 @@ app.get('/api/groups/:groupId/members', async (req, res) => {
             participants.map(async (participant) => {
                 try {
                     const contact = await client.getContactById(participant.id._serialized);
-                    const phone = contact.number || participant.id.user;
-                    const name = contact.pushname || contact.name || phone;
+                    const phone = (contact.id && contact.id.user) ? contact.id.user : (contact.number || participant.id.user);
+                    const name = contact.pushname || contact.name || contact.verifiedName || phone;
 
                     const memberData = {
                         id: participant.id._serialized,
@@ -1228,8 +1228,8 @@ async function cacheGroupMembers(groupId) {
         for (const participant of chat.participants) {
             try {
                 const contact = await client.getContactById(participant.id._serialized);
-                const phone = contact.number || participant.id.user;
-                const name = contact.pushname || contact.name || phone;
+                const phone = (contact.id && contact.id.user) ? contact.id.user : (contact.number || participant.id.user);
+                const name = contact.pushname || contact.name || contact.verifiedName || phone;
 
                 membersMap.set(participant.id._serialized, {
                     name: name,
@@ -1444,10 +1444,12 @@ async function processMessage(msg, groupName, groupId) {
                 // Get member name and phone
                 try {
                     const contact = await client.getContactById(memberId);
-                    const memberPhone = contact.number || memberId.split('@')[0];
-                    memberName = contact.pushname || contact.name || memberPhone;
+                    // Extract phone using id.user first (like the working script)
+                    const memberPhone = (contact.id && contact.id.user) ? contact.id.user : (contact.number || memberId.split('@')[0]);
+                    memberName = contact.pushname || contact.name || contact.verifiedName || memberPhone;
                 } catch (e) {
                     memberName = memberId.split('@')[0];
+                    console.log(`⚠️ Failed to get contact for member ${memberId}:`, e.message);
                 }
 
                 // Determine if it's a join or leave based on notification subtype
@@ -1523,41 +1525,27 @@ async function processMessage(msg, groupName, groupId) {
 
         if (msg.author) {
             try {
-                // Get contact by author ID
-                const contact = await client.getContactById(msg.author);
+                // Use msg.getContact() - the working approach from commit 5438c20
+                const contact = await msg.getContact();
 
-                // Log ALL contact properties to see what we have
-                console.log(`\n🔍 Contact object for ${msg.author}:`);
-                console.log(`  id._serialized: ${contact.id?._serialized}`);
-                console.log(`  id.user: ${contact.id?.user}`);
-                console.log(`  id.server: ${contact.id?.server}`);
-                console.log(`  number: ${contact.number}`);
-                console.log(`  pushname: ${contact.pushname}`);
-                console.log(`  name: ${contact.name}`);
-                console.log(`  shortName: ${contact.shortName}`);
-                console.log(`  isMyContact: ${contact.isMyContact}`);
-                console.log(`  isUser: ${contact.isUser}`);
-                console.log(`  isWAContact: ${contact.isWAContact}`);
-
-                // Try to get phone from id.user if number is not available
-                senderPhone = contact.number || contact.id?.user || msg.author.split('@')[0];
-                const contactName = contact.pushname || contact.name || contact.shortName || '';
-
-                // Format as "Name (Phone)" or just phone if no name
-                if (contactName && senderPhone && contactName !== senderPhone) {
-                    senderName = `${contactName} (${senderPhone})`;
-                } else if (senderPhone) {
-                    senderName = senderPhone;
+                // Extract phone number - try different properties
+                if (contact.id && contact.id.user) {
+                    senderPhone = contact.id.user;
+                } else if (contact.number) {
+                    senderPhone = contact.number;
                 } else {
-                    senderName = contactName || msg.author.split('@')[0];
+                    senderPhone = msg.author.split('@')[0];
                 }
 
-                console.log(`✅ Final result: ${senderName}\n`);
+                // Get sender name with priority order
+                senderName = contact.pushname || contact.name || contact.verifiedName || senderPhone;
+
+                console.log(`✅ Resolved contact: ${senderName} (${senderPhone})`);
             } catch (e) {
                 // Fallback: use author ID
                 senderPhone = msg.author.split('@')[0];
                 senderName = senderPhone;
-                console.log(`⚠️ getContactById failed: ${e.message}`);
+                console.log(`⚠️ msg.getContact() failed: ${e.message}`);
                 console.log(`   Using ID as fallback: ${senderName}\n`);
             }
         } else {
@@ -1629,7 +1617,8 @@ async function processMessage(msg, groupName, groupId) {
 async function createEvent(memberId, eventType, groupName, groupId) {
     try {
         const contact = await client.getContactById(memberId);
-        const memberName = contact.pushname || contact.name || contact.number || 'Unknown';
+        const memberPhone = (contact.id && contact.id.user) ? contact.id.user : (contact.number || memberId.split('@')[0]);
+        const memberName = contact.pushname || contact.name || contact.verifiedName || memberPhone;
 
         return {
             timestamp: new Date().toISOString(),
