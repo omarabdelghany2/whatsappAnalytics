@@ -8,27 +8,8 @@ const http = require('http');
 const WebSocket = require('ws');
 const sqlite3 = require('sqlite3').verbose();
 
-// Load configuration
+// Configuration will be loaded from DATA_DIR below
 let config;
-try {
-    const configFile = fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8');
-    config = JSON.parse(configFile);
-} catch (error) {
-    config = {
-        groups: ["Army"],
-        checkInterval: 60000,
-        messageLimit: 15,
-        detectJoinsLeaves: true,
-        port: 3000
-    };
-    fs.writeFileSync(path.join(__dirname, 'config.json'), JSON.stringify(config, null, 2));
-}
-
-const PORT = config.port || 3000;
-const CHECK_INTERVAL = config.checkInterval || 60000;
-const MESSAGE_LIMIT = config.messageLimit || 15;
-const DETECT_JOINS_LEAVES = config.detectJoinsLeaves !== false;
-const GROUP_NAMES = config.groups || ["Army"];
 
 // Express app
 const app = express();
@@ -99,6 +80,13 @@ try {
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
     console.log(`📋 Created new config at: ${CONFIG_PATH}`);
 }
+
+// Extract configuration values AFTER loading from volume
+const PORT = config.port || 3000;
+const CHECK_INTERVAL = config.checkInterval || 60000;
+const MESSAGE_LIMIT = config.messageLimit || 15;
+const DETECT_JOINS_LEAVES = config.detectJoinsLeaves !== false;
+const GROUP_NAMES = config.groups || [];
 
 // Initialize SQLite database
 const dbPath = path.join(DATA_DIR, 'whatsapp_analytics.db');
