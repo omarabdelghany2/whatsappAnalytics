@@ -358,8 +358,8 @@ const Index = () => {
           </Button>
         </div>
       </header>
-      <div className="flex-1 grid grid-cols-12 overflow-hidden">
-        <div className="col-span-3">
+      <div className="flex-1 grid grid-cols-12">
+        <div className="col-span-3 overflow-hidden">
           <GroupList
             groups={transformedGroups}
             selectedGroupId={selectedGroupId || ""}
