@@ -64,12 +64,11 @@ export function ChatView({ messages, groupName }: ChatViewProps) {
       <div className="p-4 border-b border-border bg-card">
         <h2 className="text-lg font-semibold text-foreground">{groupName}</h2>
       </div>
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden" style={{ flex: '1 1 0', minHeight: 0 }}>
         <div
           ref={scrollViewportRef}
           onScroll={checkIfAtBottom}
           className="h-full overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200"
-          style={{ maxHeight: 'calc(100vh - 120px)' }}
         >
           <div className="space-y-4">
             {messages.map((message) => (
