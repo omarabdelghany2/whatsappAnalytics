@@ -80,24 +80,17 @@ if (!fs.existsSync(DATA_DIR)) {
 // Config file path - use volume in production for persistence
 const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
 
-// Migrate config to volume if needed (Railway)
-if (process.env.RAILWAY_ENVIRONMENT) {
-    const localConfigPath = path.join(__dirname, 'config.json');
-    if (fs.existsSync(localConfigPath) && !fs.existsSync(CONFIG_PATH)) {
-        console.log('📋 Migrating config.json to persistent volume...');
-        fs.copyFileSync(localConfigPath, CONFIG_PATH);
-    }
-}
-
-// Reload config from persistent location
+// Load config from persistent location (NEVER overwrite existing volume config)
 try {
     const configFile = fs.readFileSync(CONFIG_PATH, 'utf8');
     config = JSON.parse(configFile);
     console.log(`📋 Loaded config from: ${CONFIG_PATH}`);
+    console.log(`📋 Groups loaded: ${config.groups.join(', ') || '(none)'}`);
 } catch (error) {
-    // Config doesn't exist in volume, use default and save
+    // Config doesn't exist in volume, create default
+    console.log('📋 No config found in volume, creating default...');
     config = {
-        groups: ["Army"],
+        groups: [],  // Start with empty array - user will add groups via UI
         checkInterval: 60000,
         messageLimit: 15,
         detectJoinsLeaves: true,
