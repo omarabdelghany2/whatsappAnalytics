@@ -7,7 +7,6 @@ const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const sqlite3 = require('sqlite3').verbose();
-const translate = require('@vitalets/google-translate-api');
 
 // Configuration will be loaded from DATA_DIR below
 let config;
@@ -711,58 +710,6 @@ app.get('/api/search', (req, res) => {
             hasMore: rows.length === limit
         });
     });
-});
-
-// Translate messages (Arabic to Chinese)
-app.post('/api/translate', async (req, res) => {
-    try {
-        const { messages: messagesToTranslate } = req.body;
-
-        if (!messagesToTranslate || !Array.isArray(messagesToTranslate) || messagesToTranslate.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'Messages array is required'
-            });
-        }
-
-        // Limit to 10 messages to avoid overload
-        const limitedMessages = messagesToTranslate.slice(0, 10);
-
-        // Translate each message from Arabic to Chinese
-        const translatedResults = await Promise.all(
-            limitedMessages.map(async (msg) => {
-                try {
-                    const result = await translate(msg.content, { from: 'ar', to: 'zh-CN' });
-                    return {
-                        id: msg.id,
-                        original: msg.content,
-                        translated: result.text,
-                        success: true
-                    };
-                } catch (error) {
-                    console.error(`Translation error for message ${msg.id}:`, error.message);
-                    return {
-                        id: msg.id,
-                        original: msg.content,
-                        translated: msg.content, // Return original if translation fails
-                        success: false,
-                        error: error.message
-                    };
-                }
-            })
-        );
-
-        res.json({
-            success: true,
-            translations: translatedResults
-        });
-    } catch (error) {
-        console.error('Translation endpoint error:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
 });
 
 // Get statistics
