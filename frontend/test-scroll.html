@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GroupList Scroll Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="h-screen flex flex-col bg-white">
+        <!-- Header -->
+        <header class="border-b border-gray-200 bg-white px-6 py-4">
+            <h1 class="text-xl font-bold">WhatsApp Analytics - Scroll Test</h1>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 grid grid-cols-12 overflow-hidden">
+            <!-- GroupList Column (3 columns) -->
+            <div class="col-span-3 h-full">
+                <!-- GroupList Component -->
+                <div class="h-full border-r border-gray-200 bg-white flex flex-col overflow-hidden">
+                    <!-- Header -->
+                    <div class="p-4 border-b border-gray-200 space-y-3 flex-shrink-0">
+                        <h2 class="text-lg font-semibold">Group Chats</h2>
+                        <div class="flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="Group name"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded"
+                            />
+                            <button class="px-3 py-2 bg-blue-500 text-white rounded">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Group List -->
+                    <div class="overflow-y-auto" style="flex: 1 1 0; min-height: 0;">
+                        <!-- Generate 25 groups for testing -->
+                        <script>
+                            const groups = [
+                                'تحدي 51Talk: مستكشف السعودية الصغير1',
+                                'تحدي 51talk: مستكشف السعودية الصغير3',
+                                'تحدي 51talk: مستكشف السعودية الصغيرA2',
+                                'تحدي 51talk: مستكشف السعودية الصغيرG2',
+                                'تحدي 51talk: مستكشف السعودية الصغيرG4',
+                                'تحدي 51Talk: كرنفال العجائبG2',
+                                'English Learning Club 1',
+                                'تحدي 51Talk: كرنفال العجائب1',
+                                'تحدي 51Talk: كرنفال العجائبG4',
+                                'تحدي 51Talk: كرنفال العجائب2',
+                                'تحدي 51Talk: كرنفال العجائبA1',
+                                'English Learning Club 2',
+                                'تحدي 51Talk: كرنفال العجائبG1',
+                                'تحدي 51talk: وظيفة الاحلام G1',
+                                'تحدي 51talk: وظيفة الاحلام 1',
+                                'تحدي 51talk: مغامرتنا الأونلاين بالهواء الطلقG1',
+                                'تحدي 51talk: وظيفة الاحلام A1',
+                                'تحدي 51talk: وظيفة الاحلام G4',
+                                'تحدي 51talk: وظيفة الاحلام G2',
+                                'Test Group 20',
+                                'Test Group 21',
+                                'Test Group 22',
+                                'Test Group 23',
+                                'Test Group 24',
+                                'Test Group 25'
+                            ];
+
+                            const container = document.currentScript.parentElement;
+
+                            groups.forEach((groupName, index) => {
+                                const groupDiv = document.createElement('div');
+                                groupDiv.className = 'w-full border-b border-gray-200 hover:bg-gray-50 relative group cursor-pointer';
+                                groupDiv.innerHTML = `
+                                    <div class="w-full p-4 pr-12 text-left">
+                                        <div class="flex items-start justify-between mb-1">
+                                            <h3 class="font-semibold truncate">${groupName}</h3>
+                                            <span class="text-xs text-gray-500 whitespace-nowrap ml-2">14:38</span>
+                                        </div>
+                                        <p class="text-sm text-gray-500 truncate mb-2">No messages yet</p>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center text-xs text-gray-500">
+                                                <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                </svg>
+                                                ${Math.floor(Math.random() * 100)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-red-500">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                `;
+                                container.appendChild(groupDiv);
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Column (6 columns) -->
+            <div class="col-span-6 h-full bg-gray-50 flex items-center justify-center">
+                <p class="text-gray-500">Chat View Area</p>
+            </div>
+
+            <!-- Analytics Column (3 columns) -->
+            <div class="col-span-3 h-full bg-gray-50 flex items-center justify-center">
+                <p class="text-gray-500">Analytics Panel</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('✅ Test page loaded');
+        console.log('📜 Check if scrollbar appears in the GroupList on the left');
+        console.log('🖱️ Try scrolling to see all 25 groups');
+    </script>
+</body>
+</html>
