@@ -19,6 +19,7 @@ interface ChatViewProps {
 
 export function ChatView({ messages, groupName }: ChatViewProps) {
   const [translatedMessages, setTranslatedMessages] = useState<Set<string>>(new Set());
+  const [isTranslatingAll, setIsTranslatingAll] = useState(false);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
@@ -59,10 +60,43 @@ export function ChatView({ messages, groupName }: ChatViewProps) {
     });
   };
 
+  const handleTranslateAll = () => {
+    setIsTranslatingAll(true);
+
+    // Toggle: if all messages are already translated, untranslate them
+    if (translatedMessages.size === messages.length) {
+      setTranslatedMessages(new Set());
+    } else {
+      // Translate all visible messages
+      const allMessageIds = messages.map(msg => msg.id);
+      setTranslatedMessages(new Set(allMessageIds));
+
+      // TODO: Call backend API to translate all messages at once
+      // await fetch('/api/translate-batch', {
+      //   method: 'POST',
+      //   body: JSON.stringify({ messageIds: allMessageIds })
+      // });
+    }
+
+    setIsTranslatingAll(false);
+  };
+
   return (
     <div className="h-full flex flex-col bg-chat-bg">
-      <div className="p-4 border-b border-border bg-card">
+      <div className="p-4 border-b border-border bg-card flex items-center justify-between">
         <h2 className="text-lg font-semibold text-foreground">{groupName}</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleTranslateAll}
+          disabled={isTranslatingAll || messages.length === 0}
+          className="gap-2"
+        >
+          <Languages className="h-4 w-4" />
+          {translatedMessages.size === messages.length && messages.length > 0
+            ? "Show Original"
+            : "Translate All"}
+        </Button>
       </div>
       <div className="flex-1 overflow-hidden" style={{ flex: '1 1 0', minHeight: 0 }}>
         <div
