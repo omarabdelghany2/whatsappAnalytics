@@ -7,7 +7,7 @@ const path = require('path');
 const http = require('http');
 const WebSocket = require('ws');
 const sqlite3 = require('sqlite3').verbose();
-const translate = require('@vitalets/google-translate-api');
+const { translate } = require('@vitalets/google-translate-api');
 
 // Configuration will be loaded from DATA_DIR below
 let config;
